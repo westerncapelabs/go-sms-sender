@@ -1,0 +1,1 @@
+require("./test-go-sms-sender.js")
