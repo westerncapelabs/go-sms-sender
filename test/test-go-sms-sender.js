@@ -20,7 +20,7 @@ describe("test_api", function() {
 
 // YOUR TESTS START HERE
 // CHANGE THIS to test_your_app_name
-describe("When using the skeleton", function() {
+describe("When using the SMS sender via USSD", function() {
 
     // These are used to mock API reponses
     // EXAMPLE: Response from google maps API
@@ -31,6 +31,7 @@ describe("When using the skeleton", function() {
     var tester = new vumigo.test_utils.ImTester(app.api, {
         custom_setup: function (api) {
             api.config_store.config = JSON.stringify({
+                sms_tag: ['pool', 'addr']
                 //user_store: "go_skeleton"
             });
             fixtures.forEach(function (f) {
@@ -40,114 +41,104 @@ describe("When using the skeleton", function() {
         async: true
     });
 
+    var assert_single_sms = function(to_addr, content) {
+        var teardown = function(api) {
+            var sms = api.outbound_sends[0];
+            assert.equal(api.outbound_sends.length, 1);
+            assert.equal(sms.to_addr, to_addr);
+            assert.equal(sms.content, content);
+        };
+        return teardown;
+    };
+
     // first test should always start 'null, null' because we haven't
     // started interacting yet
-    it("first screen should ask us to say something ", function (done) {
+    it.skip("first screen should ask us to say something ", function (done) {
         var p = tester.check_state({
             user: null,
             content: null,
             next_state: "first_state",
-            response: "^Say something please"
+            response: "^Say something please",
+            continue_session: true
         });
         p.then(done, done);
     });
 
-    it("second screen should ask if we want to know what we said", function (done) {
-        var user = {
-            current_state: 'first_state'
-        };
+    it.skip("we should be told SMS sent and asked if we want to do another", function (done) {
         var p = tester.check_state({
-            user: user,
-            content: "Hello world!",
+            user: null,
+            content: "Hello Mike",
             next_state: "second_state",
-            response: (
-                "^Thank you! Do you what to know what you said\\?[^]" +
-                "1. Yes[^]"+
-                "2. No$"
-            )
+            response: "^Thank you, SMS sent! Send another\\?[^]" +
+                    "1. Yes[^]"+
+                    "2. No$",
+            continue_session: true
         });
         p.then(done, done);
     });
 
-    it("declining to know what we said, should say goodbye", function (done) {
-        var user = {
-            current_state: 'second_state',
-            answers: {
-                first_state: 'Hello world!'
-            }
-        };
+    it.skip("we should decline sending another and get an ending thankyou", function (done) {
+        // var user = {
+        //     current_state: "fi",
+        //     answers: {
+        //         first_state: "Hello Mike"
+        //     }
+        // }
         var p = tester.check_state({
-            user: user,
-            content: "2",
+            user: null,
+            content: "Hello Mike",
             next_state: "end_state",
-            response: "^Thank you and bye bye!$",
+            response: "^You said 'Hello Mike'. Thank you and bye bye!$",
             continue_session: false
         });
         p.then(done, done);
     });
 
-    it("agreeing to know what we said should show us", function (done) {
-        var user = {
-            current_state: 'second_state',
-            answers: {
-                first_state: 'Hello world!'
-            }
-        };
-        var p = tester.check_state({
-            user: user,
-            content: "1",
-            next_state: "third_state",
-            response: (
-                "^We think you said 'Hello world!'. Correct\\?[^]" +
-                "1. Yes[^]"+
-                "2. No$"
-            )
-        });
-        p.then(done, done);
+});
+
+describe("When using the SMS sender via SMS", function() {
+
+    // These are used to mock API reponses
+    // EXAMPLE: Response from google maps API
+    var fixtures = [
+       'test/fixtures/example-geolocation.json'
+    ];
+
+    var tester = new vumigo.test_utils.ImTester(app.api, {
+        custom_setup: function (api) {
+            api.config_store.config = JSON.stringify({
+                sms_tag: ['pool', 'addr']
+                //user_store: "go_skeleton"
+            });
+            fixtures.forEach(function (f) {
+                api.load_http_fixture(f);
+            });
+        },
+        async: true
     });
 
-    it("told we got it right so say goodbye", function (done) {
-        var user = {
-            current_state: 'third_state',
-            answers: {
-                first_state: 'Hello world!',
-                second_state: 'third_state'
-            }
+    var assert_single_sms = function(to_addr, content) {
+        var teardown = function(api) {
+            var sms = api.outbound_sends[0];
+            assert.equal(api.outbound_sends.length, 1);
+            assert.equal(sms.to_addr, to_addr);
+            assert.equal(sms.content, content);
         };
+        return teardown;
+    };
+
+    // first test should always start 'null, null' because we haven't
+    // started interacting yet
+    it("say something to app should enter text and exit", function (done) {
         var p = tester.check_state({
-            user: user,
-            content: "1",
-            next_state: "end_state_correct",
-            response: "^Aren't we clever\\? Thank you and bye bye!$",
+            user: null,
+            content: "Hello Mike",
+            next_state: "the_text_state_rebuilt",
+            response: "^You said 'Hello Mike'. Thank you and bye bye!",
             continue_session: false
         });
         p.then(done, done);
     });
 
-    it("told we got it wrong so say goodbye", function (done) {
-        var user = {
-            current_state: 'third_state',
-            answers: {
-                first_state: 'Hello world!',
-                second_state: 'third_state'
-            }
-        };
-        var p = tester.check_state({
-            user: user,
-            content: "2",
-            next_state: "end_state_wrong",
-            response: "^Silly us! Thank you and bye bye!$",
-            continue_session: false
-        });
-        p.then(done, done);
-    });
-
-
-    // This is an example of a test that we don't want to run at the moment
-    // so we add .skip
-    it.skip('should go to end when asked for them to say someting', function() {
-        var p = tester.check_state({current_state: 'state_we_have_not_made'}, 'Hello world!',
-            'end_state', '^Thank you and bye bye!');
-    });
 
 });
