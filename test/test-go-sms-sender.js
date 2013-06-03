@@ -53,7 +53,7 @@ describe("When using the SMS sender via USSD", function() {
 
     // first test should always start 'null, null' because we haven't
     // started interacting yet
-    it("first screen should ask us to say something ", function (done) {
+    it.skip("first screen should ask us to say something ", function (done) {
         var p = tester.check_state({
             user: null,
             content: null,
@@ -77,7 +77,7 @@ describe("When using the SMS sender via USSD", function() {
         p.then(done, done);
     });
 
-    it("we should decline sending another and get an ending thankyou", function (done) {
+    it.skip("we should decline sending another and get an ending thankyou", function (done) {
         // var user = {
         //     current_state: "fi",
         //     answers: {
@@ -129,11 +129,11 @@ describe("When using the SMS sender via SMS", function() {
 
     // first test should always start 'null, null' because we haven't
     // started interacting yet
-    it.skip("say something to app should enter text and exit", function (done) {
+    it("say something to app should enter text and exit", function (done) {
         var p = tester.check_state({
             user: null,
             content: "Hello Mike",
-            next_state: "end_state",
+            next_state: "the_text_state_rebuilt",
             response: "^You said 'Hello Mike'. Thank you and bye bye!",
             continue_session: false
         });
